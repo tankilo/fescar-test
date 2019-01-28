@@ -6,3 +6,5 @@
 为了测试方便我把两个数据源都指向了相同的mysql     
 执行fescar-simple.sql和undo_log.sql     
 运行com.tankilo.Simple    
+
+gts这个demo在fescar下运行会出错，已经提了[issue](https://github.com/alibaba/fescar/issues/312)
