@@ -2,7 +2,7 @@
 这个项目修改[阿里云 GTS的样例工程](https://help.aliyun.com/document_detail/57267.html)    
 来测试GTS的开源版本 [fescar](https://github.com/alibaba/fescar)
 
-## fescar-test-simple
+## fescar-test-simple(sample-txc-simple)
 1. 在mysql里运行fescar-test-simple/src/main/resources/fescar-simple.sql
 可以选择把两个表分到两个mysql，为了测试方便也可以用于一个mysql
 2. 在mysql里运行fescar-test-simple/src/main/resources/undo_log.sql
