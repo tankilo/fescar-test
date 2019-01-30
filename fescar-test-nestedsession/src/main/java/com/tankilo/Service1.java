@@ -1,8 +1,6 @@
 package com.tankilo;
 
 import com.alibaba.fescar.spring.annotation.GlobalTransactional;
-import java.util.List;
-import java.util.Random;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
