@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations" value="classpath:jdbc.properties"/>
+    </bean>
+
+    <!-- 我们的测试用例中模拟了跨两个数据库的情况，所以指定了两个数据源 -->
+    <bean name="dataSource1" class="com.alibaba.druid.pool.DruidDataSource"
+          init-method="init" destroy-method="close">
+        <property name="url" value="${jdbc.datasource1.url}"/>
+        <property name="username" value="${jdbc.datasource1.username}"/>
+        <property name="password" value="${jdbc.datasource1.password}"/>
+        <property name="driverClassName" value="${jdbc.datasource1.driver}"/>
+        <property name="initialSize" value="0"/>
+        <property name="maxActive" value="180"/>
+        <property name="minIdle" value="0"/>
+        <property name="maxWait" value="60000"/>
+        <property name="validationQuery" value="Select 'x' from DUAL"/>
+        <property name="testOnBorrow" value="false"/>
+        <property name="testOnReturn" value="false"/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="timeBetweenEvictionRunsMillis" value="60000"/>
+        <property name="minEvictableIdleTimeMillis" value="25200000"/>
+        <property name="removeAbandoned" value="true"/>
+        <property name="removeAbandonedTimeout" value="1800"/>
+        <property name="logAbandoned" value="true"/>
+        <property name="filters" value="mergeStat"/>
+    </bean>
+
+    <bean id="dataSourceProxy1" class="com.alibaba.fescar.rm.datasource.DataSourceProxy">
+        <constructor-arg ref="dataSource1"/>
+    </bean>
+
+    <bean id="jdbcTemplate1" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSourceProxy1"/>
+    </bean>
+
+    <bean name="dataSource2" class="com.alibaba.druid.pool.DruidDataSource"
+          init-method="init" destroy-method="close">
+        <property name="url" value="${jdbc.datasource2.url}"/>
+        <property name="username" value="${jdbc.datasource2.username}"/>
+        <property name="password" value="${jdbc.datasource2.password}"/>
+        <property name="driverClassName" value="${jdbc.datasource2.driver}"/>
+        <property name="initialSize" value="0"/>
+        <property name="maxActive" value="180"/>
+        <property name="minIdle" value="0"/>
+        <property name="maxWait" value="60000"/>
+        <property name="validationQuery" value="Select 'x' from DUAL"/>
+        <property name="testOnBorrow" value="false"/>
+        <property name="testOnReturn" value="false"/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="timeBetweenEvictionRunsMillis" value="60000"/>
+        <property name="minEvictableIdleTimeMillis" value="25200000"/>
+        <property name="removeAbandoned" value="true"/>
+        <property name="removeAbandonedTimeout" value="1800"/>
+        <property name="logAbandoned" value="true"/>
+        <property name="filters" value="mergeStat"/>
+    </bean>
+
+    <bean id="dataSourceProxy2" class="com.alibaba.fescar.rm.datasource.DataSourceProxy">
+        <constructor-arg ref="dataSource1"/>
+    </bean>
+
+    <bean id="jdbcTemplate2" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSourceProxy2"/>
+    </bean>
+    <bean class="com.alibaba.fescar.spring.annotation.GlobalTransactionScanner">
+        <constructor-arg value="dubbo-demo-storage-service"/>
+        <constructor-arg value="my_test_tx_group"/>
+    </bean>
+</beans>
