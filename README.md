@@ -45,3 +45,20 @@
 如果直接运行的话，里面的全局事务提交后，RM还没异步删除undo_log，所以外层事务还能回滚，看起来没有问题。     
 所以需要调试，断点选暂停Thread，在里层事务commit等一会儿，等undo_log给清理了，     
 然后继续放开断点，就发现外层事务根本没法回滚，因为undo_log都没了。     
+
+## fescar-test-lockconflict
+为了求快还是弄了项目来测试对 https://github.com/alibaba/fescar/issues/324 的修改   
+这个问题后来发现com.alibaba.fescar.rm.datasource.exec.SelectForUpdateExecutor.doExecute里面是正确处理的，回滚了物理sql。   
+如果早看到那里，不用花太多时间。    
+其实应该写个单元测试的。
+ 
+1. 在mysql里运行fescar-test-simple/src/main/resources/undo_log.sql   
+2. 在com.alibaba.fescar.tm.api.TransactionalTemplate.execute里面`tx.commit()`这行设置断点1    
+3. 调试运行com.tankilo.LockConflictTest,进程A,停在断点1处   
+4. 在com.alibaba.fescar.rm.datasource.exec.AbstractDMLBaseExecutor.executeAutoCommitTrue里面`result = executeAutoCommitFalse(args);`这行设置断点2   
+5. 调试运行com.tankilo.LockConflictTest，进程B   
+6. 进程B在while循环里走两次循环  
+7. 进程1放过断点1，等待全局事务提交完成，undo_log清理完毕  
+8. 进程2放过断点2
+
+确保money的值是9998.   
