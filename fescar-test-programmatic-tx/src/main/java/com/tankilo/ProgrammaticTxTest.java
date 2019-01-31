@@ -9,6 +9,7 @@ import com.alibaba.fescar.rm.datasource.DataSourceProxy;
 import com.alibaba.fescar.tm.TMClient;
 import com.alibaba.fescar.tm.api.FailureHandler;
 import com.alibaba.fescar.tm.api.GlobalTransaction;
+import com.alibaba.fescar.tm.api.GlobalTransactionContext;
 import com.alibaba.fescar.tm.api.TransactionalExecutor;
 import com.alibaba.fescar.tm.api.TransactionalTemplate;
 import java.sql.Connection;
@@ -39,6 +40,7 @@ public class ProgrammaticTxTest {
 
         ProgrammaticTxTest app = new ProgrammaticTxTest();
         app.demoByHighLevelAPI();
+//        app.demoByHighLevelAPI();
 
         System.in.read();
     }
@@ -73,6 +75,11 @@ public class ProgrammaticTxTest {
         }
     }
 
+    /**
+     * AutoCommit is false.
+     * One Branch Transaction contains two sql.
+     * @throws SQLException
+     */
     private static void businessCall1() throws SQLException {
         Connection con = null;
         try {
@@ -91,6 +98,33 @@ public class ProgrammaticTxTest {
         } catch (Exception e) {
             e.printStackTrace();
             con.rollback();
+        } finally {
+            if (null != con) {
+                con.close();
+            }
+        }
+    }
+
+    /**
+     * AutoCommit is True.
+     * Two Branch Transaction, each one contains a sql.
+     * @throws SQLException
+     */
+    private static void businessCall2() throws SQLException {
+        Connection con = null;
+        try {
+            con = dataSourceProxy.getConnection();
+            try (PreparedStatement pt = con.prepareStatement("update user_money_a set money = money - ? where 1=1")) {
+                pt.setInt(1, 1);
+                pt.executeUpdate();
+            }
+
+            try (PreparedStatement pt = con.prepareStatement("update user_money_b set money = money + ? where 1=1")) {
+                pt.setInt(1, 1);
+                pt.executeUpdate();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             if (null != con) {
                 con.close();
@@ -119,7 +153,7 @@ public class ProgrammaticTxTest {
                 @Override
                 public Object execute() throws Throwable {
                     // Do Your BusinessService
-                    businessCall1();
+                    businessCall2();
                     return null;
                 }
 
@@ -205,6 +239,45 @@ public class ProgrammaticTxTest {
                 }
             }, 0, 5, TimeUnit.SECONDS);
         }
+    }
 
+    public void demoByLowLevelAPI() throws Throwable {
+        // 0. init
+        init();
+
+        // 1. get or create a transaction
+        GlobalTransaction tx = GlobalTransactionContext.getCurrentOrCreate();
+
+        // 2. begin transaction
+        try {
+            tx.begin(30000, "my_tx_instance");
+
+        } catch (TransactionException txe) {
+            // TODO: Handle the transaction begin failure.
+        }
+
+        Object rs = null;
+        try {
+            // Do Your BusinessService
+            businessCall1();
+        } catch (Throwable ex) {
+            // 3. any business exception, rollback.
+            try {
+                tx.rollback();
+                // 3.1 throw the business exception out.
+                throw ex;
+
+            } catch (TransactionException txe) {
+                // TODO: Handle the transaction rollback failure.
+            }
+        }
+
+        // 4. everything is fine, commit.
+        try {
+            tx.commit();
+        } catch (TransactionException txe) {
+            // TODO: Handle the transaction rollback failure.
+
+        }
     }
 }
